@@ -9,6 +9,8 @@ pipeline {
     environment {
         DOCKER_USER = 'tanshul12'
         IMAGE_NAME  = "${DOCKER_USER}/campus-energy-monitor"
+        // Ensure Jenkins finds Docker and Kubectl installed via Docker Desktop
+        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources;${env.PATH}"
     }
 
     stages {
@@ -44,7 +46,7 @@ pipeline {
                 bat """
                     docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
                     docker run -d --name test-container -p 8089:80 %IMAGE_NAME%:%IMAGE_TAG%
-                    timeout /t 3 /nobreak
+                    ping -n 4 127.0.0.1 >nul
                     curl -f http://localhost:8089 || (docker rm -f test-container && exit 1)
                     docker rm -f test-container
                 """
