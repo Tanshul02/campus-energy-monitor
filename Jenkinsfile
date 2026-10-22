@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER = 'Tanshul02'
+        DOCKER_USER = 'tanshul12'
         IMAGE_NAME  = "${DOCKER_USER}/campus-energy-monitor"
     }
 

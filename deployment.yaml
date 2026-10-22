@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: YOUR_DOCKERHUB_USERNAME/campus-energy-monitor:latest
+        image: tanshul12/campus-energy-monitor:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
