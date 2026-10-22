@@ -9,8 +9,8 @@ pipeline {
     environment {
         DOCKER_USER = 'tanshul12'
         IMAGE_NAME  = "${DOCKER_USER}/campus-energy-monitor"
-        // Ensure Jenkins finds Docker and Kubectl installed via Docker Desktop
-        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources;${env.PATH}"
+        DOCKER_BIN  = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
+        KUBECTL_BIN = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\kubectl.exe'
     }
 
     stages {
@@ -44,11 +44,11 @@ pipeline {
         stage('Build & Test Local Container') {
             steps {
                 bat """
-                    docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
-                    docker run -d --name test-container -p 8089:80 %IMAGE_NAME%:%IMAGE_TAG%
+                    "%DOCKER_BIN%" build -t %IMAGE_NAME%:%IMAGE_TAG% .
+                    "%DOCKER_BIN%" run -d --name test-container -p 8089:80 %IMAGE_NAME%:%IMAGE_TAG%
                     ping -n 4 127.0.0.1 >nul
-                    curl -f http://localhost:8089 || (docker rm -f test-container && exit 1)
-                    docker rm -f test-container
+                    curl -f http://localhost:8089 || ("%DOCKER_BIN%" rm -f test-container && exit 1)
+                    "%DOCKER_BIN%" rm -f test-container
                 """
             }
         }
@@ -57,10 +57,10 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
                     bat """
-                        echo %DH_PASS% | docker login -u %DH_USER% --password-stdin
-                        docker push %IMAGE_NAME%:%IMAGE_TAG%
-                        docker tag %IMAGE_NAME%:%IMAGE_TAG% %IMAGE_NAME%:latest
-                        docker push %IMAGE_NAME%:latest
+                        echo %DH_PASS% | "%DOCKER_BIN%" login -u %DH_USER% --password-stdin
+                        "%DOCKER_BIN%" push %IMAGE_NAME%:%IMAGE_TAG%
+                        "%DOCKER_BIN%" tag %IMAGE_NAME%:%IMAGE_TAG% %IMAGE_NAME%:latest
+                        "%DOCKER_BIN%" push %IMAGE_NAME%:latest
                     """
                 }
             }
@@ -73,8 +73,8 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
                     bat """
-                        kubectl --kubeconfig="%KUBECONFIG%" apply -f deployment.yaml
-                        kubectl --kubeconfig="%KUBECONFIG%" rollout status deployment/campus-energy-monitor --timeout=60s
+                        "%KUBECTL_BIN%" --kubeconfig="%KUBECONFIG%" apply -f deployment.yaml
+                        "%KUBECTL_BIN%" --kubeconfig="%KUBECONFIG%" rollout status deployment/campus-energy-monitor --timeout=60s
                     """
                 }
             }
