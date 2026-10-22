@@ -9,8 +9,8 @@ pipeline {
     environment {
         DOCKER_USER = 'tanshul12'
         IMAGE_NAME  = "${DOCKER_USER}/campus-energy-monitor"
-        DOCKER_BIN  = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
-        KUBECTL_BIN = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\kubectl.exe'
+        DOCKER_BIN  = 'C:\\Users\\tanshul\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
+        KUBECTL_BIN = 'C:\\Users\\tanshul\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\kubectl.exe'
     }
 
     stages {
