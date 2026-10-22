@@ -22,12 +22,12 @@ pipeline {
             parallel {
                 stage('Validate HTML') {
                     steps {
-                        sh 'grep -q "Smart Campus Energy Monitor" index.html'
+                        bat 'findstr /C:"Smart Campus Energy Monitor" index.html'
                     }
                 }
                 stage('Validate Deployment Manifest') {
                     steps {
-                        sh 'grep -q "campus-energy-monitor" deployment.yaml'
+                        bat 'findstr /C:"campus-energy-monitor" deployment.yaml'
                     }
                 }
             }
@@ -41,11 +41,11 @@ pipeline {
 
         stage('Build & Test Local Container') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:${params.IMAGE_TAG} .
-                    docker run -d --name test-container -p 8085:80 ${IMAGE_NAME}:${params.IMAGE_TAG}
-                    sleep 3
-                    curl -f http://localhost:8085 || (docker rm -f test-container && exit 1)
+                bat """
+                    docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
+                    docker run -d --name test-container -p 8089:80 %IMAGE_NAME%:%IMAGE_TAG%
+                    timeout /t 3 /nobreak
+                    curl -f http://localhost:8089 || (docker rm -f test-container && exit 1)
                     docker rm -f test-container
                 """
             }
@@ -54,11 +54,11 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
-                    sh """
-                        echo "\$DH_PASS" | docker login -u "\$DH_USER" --password-stdin
-                        docker push ${IMAGE_NAME}:${params.IMAGE_TAG}
-                        docker tag ${IMAGE_NAME}:${params.IMAGE_TAG} ${IMAGE_NAME}:latest
-                        docker push ${IMAGE_NAME}:latest
+                    bat """
+                        echo %DH_PASS% | docker login -u %DH_USER% --password-stdin
+                        docker push %IMAGE_NAME%:%IMAGE_TAG%
+                        docker tag %IMAGE_NAME%:%IMAGE_TAG% %IMAGE_NAME%:latest
+                        docker push %IMAGE_NAME%:latest
                     """
                 }
             }
@@ -70,13 +70,9 @@ pipeline {
             }
             steps {
                 withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh """
-                        kubectl --kubeconfig=\$KUBECONFIG apply -f deployment.yaml
-                        if ! kubectl --kubeconfig=\$KUBECONFIG rollout status deployment/campus-energy-monitor --timeout=60s; then
-                            echo "Rollout failed, rolling back..."
-                            kubectl --kubeconfig=\$KUBECONFIG rollout undo deployment/campus-energy-monitor
-                            exit 1
-                        fi
+                    bat """
+                        kubectl --kubeconfig="%KUBECONFIG%" apply -f deployment.yaml
+                        kubectl --kubeconfig="%KUBECONFIG%" rollout status deployment/campus-energy-monitor --timeout=60s
                     """
                 }
             }
